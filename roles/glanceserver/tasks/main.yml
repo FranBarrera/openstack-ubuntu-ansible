@@ -1,0 +1,36 @@
+- name: ensure sudo is installed
+  apt: name=sudo state=present
+
+- name: ensure glance is installed
+  apt: pkg={{ item }}
+  with_items:
+    - glance
+    - glance-api
+    - glance-registry
+    - python-glanceclient
+    - glance-common
+
+- name: ensure glance sqlite is deleted
+  file: dest=/var/lib/glance/glance.sqlite state=absent
+
+- name: ensure glance-api.conf file is up to date
+  template: >
+    src=etc/glance/glance-api.conf
+    dest=/etc/glance/glance-api.conf
+    owner=glance
+    group=glance
+    mode=0644
+
+- name: ensure glance-registry.conf file is up to date
+  template: >
+    src=etc/glance/glance-registry.conf
+    dest=/etc/glance/glance-registry.conf
+    owner=glance
+    group=glance
+    mode=0644
+
+- name: DB sync for keystone
+  shell: >
+    su -s /bin/sh -c "glance-manage db_sync" glance
+  notify:
+  - restart glance-services
